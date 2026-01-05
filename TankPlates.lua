@@ -391,28 +391,24 @@ local function SlashHandler(msg)
   -- "add" with name - add by name
   if args[1] == "add" and args[2] then
     local name = args[2]
-    local guid = nil
     local unitid = nil
     
     -- Check if it's the player themselves
     if string.lower(name) == string.lower(UnitName("player")) then
-      _, guid = UnitExists("player")
       unitid = "player"
     else
       -- Check party members
       for i = 1, 4 do
         if UnitExists("party"..i) and string.lower(UnitName("party"..i)) == string.lower(name) then
-          _, guid = UnitExists("party"..i)
           unitid = "party"..i
           break
         end
       end
       
       -- Check raid members if not found in party
-      if not guid then
+      if not unitid then
         for i = 1, 40 do
           if UnitExists("raid"..i) and string.lower(UnitName("raid"..i)) == string.lower(name) then
-            _, guid = UnitExists("raid"..i)
             unitid = "raid"..i
             break
           end
@@ -420,19 +416,12 @@ local function SlashHandler(msg)
       end
     end
     
-    if not guid then
+    if not unitid then
       tp_print("Player '" .. name .. "' not found. Must be in your raid/party.")
       return
     end
     
-    if IsInTankList(UnitName(unitid)) then
-      tp_print(UnitName(unitid) .. " is already in the tank list")
-      return
-    end
-    
-    table.insert(tanks, {name = UnitName(unitid), guid = guid})
-    tp_print("Added " .. UnitName(unitid) .. " to tank list")
-    TP_TankListScrollFrame_Update()
+    TP_AddUnitToTankList(unitid)
     return
   end
   
