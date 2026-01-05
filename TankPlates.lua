@@ -1,4 +1,5 @@
 local DEBUG = false
+local DEBUG_VERBOSE = false -- Set to true for ALL debug messages
 
 local function tp_print(msg)
   if type(msg) == "boolean" then msg = msg and "true" or "false" end
@@ -6,7 +7,15 @@ local function tp_print(msg)
 end
 
 local function debug_print(msg)
-  if DEBUG then tp_print(msg) end
+  if DEBUG and DEBUG_VERBOSE then
+    tp_print(msg)
+  end
+end
+
+local function debug_always(msg)
+  if DEBUG then
+    tp_print(msg)
+  end
 end
 
 -- Localization
@@ -67,11 +76,28 @@ end
 
 local function IsTank(guid)
   if not guid then return false end
-  for _, tank in ipairs(tanks) do
+  
+  -- 1. Try exact GUID match (fastest and most accurate)
+  for i, tank in ipairs(tanks) do
     if tank.guid == guid then
       return true
     end
   end
+  
+  -- 2. Fallback to name match (if GUIDs are somehow different)
+  -- This handles cases where unit GUIDs might differ from target GUIDs on some servers
+  local name = UnitName(guid)
+  if name then
+    for i, tank in ipairs(tanks) do
+      if tank.name == name then
+        if DEBUG then
+           debug_print("IsTank: GUID mismatch but Name match for " .. name)
+        end
+        return true
+      end
+    end
+  end
+  
   return false
 end
 
@@ -109,6 +135,13 @@ local function UpdateTarget(guid,targetArg)
     if tracked_guids[guid].current_target then
       tracked_guids[guid].previous_target = tracked_guids[guid].current_target
     end
+    
+    -- Debug target changes
+    local mob_name = UnitName(guid)
+    local old_target = tracked_guids[guid].current_target and UnitName(tracked_guids[guid].current_target) or "none"
+    local new_target = targeting and UnitName(targeting) or "none"
+    debug_print("TARGET CHANGE - " .. mob_name .. ": " .. old_target .. " -> " .. new_target .. " [GUID: " .. tostring(targeting) .. "]")
+    
     tracked_guids[guid].current_target = targeting
   end
 end
@@ -188,30 +221,75 @@ local function InitPlate(plate)
       -- 2. Being targeted
       -- 3. Being the previous target when a mob has no current target
 
+      local new_reason = nil
+      local mob_name = UnitName(guid)
+      
       if unit.cc then
+        new_reason = "CC"
         -- PFUI and ShaguPlates use enemy bar colors to determine types, this can really mess with things.
         -- For instance if we choose (0,0,1,1) blue, the shagu reads this as friendly player and may color based on class.
         -- Due to this yellow (neutral) has been chosen for now.
         this:SetStatusBarColor(1, 1, 0, 0.6)
       elseif (unit.casting and (unit.casting_at == player_guid or unit.previous_target == player_guid)) then
+        new_reason = "CastingAtYou"
         -- casting on someone but was attacking you
         this:SetStatusBarColor(0, 1, 0, 1) -- green
       elseif unit.current_target == player_guid then
+        new_reason = "AttackingYou"
         -- attacking you
         this:SetStatusBarColor(0, 1, 0, 1) -- green
       elseif not unit.casting and (not unit.current_target and unit.previous_target == player_guid) then
+        new_reason = "Fleeing"
         -- fleeing but was attacking you
         this:SetStatusBarColor(0, 1, 0, 1) -- green
       else
         -- not attacking you, check tank assignments
-        if IsPlayerTank(unit.current_target) then
+        
+        -- Determine effective target for tank checks
+        -- Priority: 1. Current Target 2. Casting At 3. Previous Target
+        local effective_target = unit.current_target
+        
+        -- If mob is casting, they might not have a current_target, or we should care about who they are casting at
+        if not effective_target and unit.casting and unit.casting_at then
+           effective_target = unit.casting_at
+        end
+        
+        -- If still no target (momentary gap), use previous target to prevent flashing
+        if not effective_target and unit.previous_target then
+           effective_target = unit.previous_target
+        end
+        
+        if IsPlayerTank(effective_target) then
+          new_reason = "PlayerTankAggro"
           this:SetStatusBarColor(0, 1, 0, 1) -- bright green - YOU have aggro
-        elseif IsTank(unit.current_target) then
+        elseif IsTank(effective_target) then
+          new_reason = "OtherTankAggro"
           this:SetStatusBarColor(0, 0.6, 0, 1) -- dark green - other tank has aggro
         else
+          new_reason = "NonTankAggro"
           -- non-tank has aggro
           this:SetStatusBarColor(1, 0, 0, 1) -- red
         end
+      end
+      
+      -- Only log when reason changes
+      if new_reason ~= unit.last_color_reason then
+        local target_name = unit.current_target and UnitName(unit.current_target) or "none"
+        local prev_target_name = unit.previous_target and UnitName(unit.previous_target) or "none"
+        local debug_msg = mob_name .. ": " .. (unit.last_color_reason or "Init") .. " -> " .. new_reason .. " (target: " .. target_name .. ")"
+        
+        -- Add detailed info for all transitions from OtherTankAggro
+        if unit.last_color_reason == "OtherTankAggro" then
+          debug_msg = debug_msg .. " [prev_target=" .. prev_target_name .. " IsTank(curr)=" .. tostring(IsTank(unit.current_target)) .. "]"
+        end
+        
+        -- Add detailed GUID info for problematic transitions
+        if new_reason == "AttackingYou" and unit.last_color_reason == "OtherTankAggro" then
+          debug_msg = debug_msg .. " [BUG! curr=" .. tostring(unit.current_target) .. " player=" .. tostring(player_guid) .. " match=" .. tostring(unit.current_target == player_guid) .. "]"
+        end
+        
+        debug_always(debug_msg)
+        unit.last_color_reason = new_reason
       end
     else
       this:SetStatusBarColor(unpack(unit.healthbar_color))
@@ -250,6 +328,7 @@ local function Update()
             cc = false,
             casting = false,
             casting_at = nil,
+            last_color_reason = nil, -- Track last reason for color change
           }
         end
       end
@@ -300,6 +379,7 @@ function TP_AddUnitToTankList(unit)
   
   table.insert(tanks, {name = name, guid = guid})
   tp_print("Added " .. name .. " to tank list")
+  debug_always("Added Tank: " .. name .. " GUID: " .. guid)
   TP_TankListScrollFrame_Update()
 end
 
@@ -471,6 +551,7 @@ end
 local function Init()
   if event == "PLAYER_ENTERING_WORLD" then
     _,player_guid = UnitExists("player")
+    debug_always("Player GUID: " .. tostring(player_guid))
     this:SetScript("OnEvent", Events)
     this:SetScript("OnUpdate", Update)
     this:UnregisterEvent("PLAYER_ENTERING_WORLD")
