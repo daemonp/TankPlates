@@ -1,0 +1,610 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+
+	<Script file="TankPlates.lua"/>
+
+	<!-- Tank List Frame -->
+	<Frame name="TankPlatesTankListFrame" parent="UIParent" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
+		<Size>
+			<AbsDimension x="200" y="268"/>
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+			<EdgeSize val="16"/>
+			<TileSize val="16"/>
+			<BackgroundInsets left="5" right="5" top="5" bottom="5"/>
+			<Color r="0" g="0" b="0" a="1"/>
+		</Backdrop>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture>
+					<Size>
+						<AbsDimension x="190" y="60"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="0" y="-5"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+					<Color r="0" g="0" b="0"/>
+				</Texture>
+			</Layer>
+		<Layer level="BORDER">
+			<FontString inherits="GameFontNormalLarge" text="TankPlates - Tank List">
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset>
+							<AbsDimension x="0" y="-10"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</FontString>
+		</Layer>
+		</Layers>
+		<Frames>
+			<!-- Close Button -->
+			<Button name="TankPlatesTankListClose" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-3" y="-3"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						this:GetParent():Hide()
+					</OnClick>
+				</Scripts>
+			</Button>
+			
+			<!-- Add Target Button -->
+			<Button name="TankPlatesTankListAddTarget" inherits="UIPanelButtonTemplate2" text="Target">
+				<Size>
+					<AbsDimension x="64" y="32"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="5" y="-30"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						TP_AddTargetToTankList()
+					</OnClick>
+					<OnEnter>
+						GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+						GameTooltip:SetText("Add your current target to tank list")
+						GameTooltip:Show()
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<!-- Add Player Button -->
+			<Button name="TankPlatesTankListAddPlayer" inherits="UIPanelButtonTemplate2" text="Me">
+				<Size>
+					<AbsDimension x="64" y="32"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListAddTarget" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						TP_AddPlayerToTankList()
+					</OnClick>
+					<OnEnter>
+						GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+						GameTooltip:SetText("Add yourself to tank list")
+						GameTooltip:Show()
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<!-- Tank List Display -->
+			<ScrollFrame name="TankPlatesTankListFrameScrollFrame" inherits="FauxScrollFrameTemplate">
+				<Size>
+					<AbsDimension x="150" y="160"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-37" y="-72"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnVerticalScroll>
+						FauxScrollFrame_OnVerticalScroll(16, TP_TankListScrollFrame_Update)
+					</OnVerticalScroll>
+				</Scripts>
+			</ScrollFrame>
+			
+			<!-- Tank List Buttons (10 visible entries) -->
+			<Button name="TankPlatesTankListFrameButton1" id="1">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameScrollFrame"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton2" id="2">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton1" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton3" id="3">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton2" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton4" id="4">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton3" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton5" id="5">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton4" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton6" id="6">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton5" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton7" id="7">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton6" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton8" id="8">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton7" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton9" id="9">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton8" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<Button name="TankPlatesTankListFrameButton10" id="10">
+				<Size>
+					<AbsDimension x="150" y="16"/>
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="TankPlatesTankListFrameButton9" relativePoint="BOTTOMLEFT"/>
+				</Anchors>
+				<ButtonText name="$parentText">
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="5" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</ButtonText>
+				<NormalFont inherits="GameFontHighlightSmall"/>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="BOTTOMRIGHT">
+									<Offset>
+										<AbsDimension x="-10" y="0"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						TP_TankListButton_OnClick()
+					</OnClick>
+					<OnEnter>
+						getglobal(this:GetName().."Highlight"):Show()
+					</OnEnter>
+					<OnLeave>
+						getglobal(this:GetName().."Highlight"):Hide()
+					</OnLeave>
+				</Scripts>
+			</Button>
+			
+			<!-- Clear Button -->
+			<Button name="TankPlatesTankListClear" inherits="UIPanelButtonTemplate2" text="Clear">
+				<Size>
+					<AbsDimension x="64" y="32"/>
+				</Size>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset>
+							<AbsDimension x="0" y="2"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						TP_ClearTankList()
+					</OnClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnMouseDown>
+				this:StartMoving()
+			</OnMouseDown>
+			<OnMouseUp>
+				this:StopMovingOrSizing()
+			</OnMouseUp>
+			<OnShow>
+				this:SetAlpha(1)
+			</OnShow>
+		</Scripts>
+	</Frame>
+
+</Ui>

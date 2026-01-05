@@ -1,4 +1,4 @@
-# Tank Plates 1.4.0
+# Tank Plates 1.4.1
 
 * For 1.12 wow client
 * Requires [SuperWoW](https://github.com/balakethelock/SuperWoW/)
@@ -6,24 +6,17 @@
 
 ## Features
 
-* Colors enemy plates depending on if they're attacking you
+* Colors enemy plates depending on who they're attacking
 * Text highlight for the enemy you're targeting
-* MT/OT role assignment to identify when non-tanks pull aggro
+* Support for multiple tanks with easy GUI management
 
-### Tank Role Commands
+### Tank Management
 
-Use `/tp` to manage Main Tank (MT) and Off Tank (OT) assignments in raids:
-
-* `/tp` - Show current tank assignments
-* `/tp add mt [name]` - Assign a player as Main Tank
-* `/tp add ot [name]` - Assign a player as Off Tank
-* `/tp remove mt [name]` - Remove Main Tank assignment
-* `/tp remove ot [name]` - Remove Off Tank assignment
-* `/tp clear` - Clear all tank assignments
+Use `/tp` to open the tank list window and manage multiple tanks.
 
 **Color Guide:**
-* Green - You have aggro, or MT has aggro
-* Dark Green - OT has aggro
+* Bright Green - You have aggro
+* Dark Green - Another tank has aggro
 * Red - Non-tank has aggro (DPS/healer pulled!)
 * Yellow - Enemy is crowd controlled
 
